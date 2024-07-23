@@ -3,6 +3,7 @@ from rclpy.node import Node
 
 from vision_msgs.msg import Detection3DArray
 
+from avstack_bridge import Bridge
 from avstack_bridge.detections import DetectionBridge
 from avstack_bridge.tracks import TrackBridge
 
@@ -38,9 +39,10 @@ class BoxTracker(Node):
         )
 
     def dets_callback(self, dets_msg: Detection3DArray) -> BoxTrackArray:
-        dets_avstack = DetectionBridge.detections_3d_to_avstack(dets_msg)
-        trks_avstack = self.model(dets_avstack)
-        trks_ros = TrackBridge.avstack_to_boxtrack(trks_avstack)
+        dets_avstack = DetectionBridge.detectionarray_to_avstack(dets_msg)
+        platform = Bridge.header_to_reference(dets_msg.header)
+        trks_avstack = self.model(dets_avstack, platform=platform)
+        trks_ros = TrackBridge.avstack_to_tracks(trks_avstack, header=dets_msg.header)
         self.publisher_trks.publish(trks_ros)
 
 
