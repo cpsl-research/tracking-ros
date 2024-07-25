@@ -14,7 +14,7 @@ from avstack_msgs.msg import BoxTrackArray
 class BoxTracker(Node):
     def __init__(self):
         super().__init__("tracker")
-        self.model = BasicBoxTracker3D()
+        self.model = BasicBoxTracker3D(check_reference=False)
 
         qos = rclpy.qos.QoSProfile(
             history=rclpy.qos.QoSHistoryPolicy.KEEP_LAST,
@@ -41,7 +41,7 @@ class BoxTracker(Node):
     def dets_callback(self, dets_msg: Detection3DArray) -> BoxTrackArray:
         dets_avstack = DetectionBridge.detectionarray_to_avstack(dets_msg)
         platform = Bridge.header_to_reference(dets_msg.header)
-        trks_avstack = self.model(dets_avstack, platform=platform)
+        trks_avstack = self.model(dets_avstack, platform=platform, check_reference=False)
         trks_ros = TrackBridge.avstack_to_tracks(trks_avstack, header=dets_msg.header)
         self.publisher_trks.publish(trks_ros)
 
