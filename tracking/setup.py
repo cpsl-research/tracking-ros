@@ -25,7 +25,8 @@ setup(
     tests_require=['pytest'],
     entry_points={
         'console_scripts': [
-            'boxtracker3d = tracking.boxtracker3d:main'
+            'boxtracker3d = tracking.boxtracker3d:main',
+            'multi_platform_boxtracker3d = tracking.multi_platform_boxtracker3d:main'
         ],
     },
 )
