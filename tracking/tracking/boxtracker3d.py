@@ -62,7 +62,7 @@ class BoxTracker(Node):
     def init_callback(self, init_msg: String) -> None:
         if init_msg.data == "reset":
             self.get_logger().info("Calling reset on box tracker!")
-            self.model.tracks = []
+            self.model.reset()
 
     def dets_callback(self, dets_msg: Detection3DArray) -> BoxTrackArray:
         # perform reference conversion if needed
@@ -76,7 +76,7 @@ class BoxTracker(Node):
                 dets_msg_tf = Detection3DArray()
                 dets_msg_tf.detections = [do_transform_detection3d(det, tf_world_dets) for det in dets_msg.detections]
                 dets_msg_tf.header = tf_world_dets.header
-            except TransformException as ex:
+            except TransformException:
                 self.get_logger().info(
                     f'Could not transform detections for tracking')
                 return
