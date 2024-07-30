@@ -1,24 +1,19 @@
 import rclpy
-from rclpy.node import Node
-from message_filters import Subscriber, ApproximateTimeSynchronizer
-
-from tf2_ros import TransformException
-from tf2_ros.buffer import Buffer
-from tf2_ros.transform_listener import TransformListener
-
-from std_msgs.msg import Header, String
-from vision_msgs.msg import Detection3DArray
-from avstack_msgs.msg import BoxTrackArray
-
+from avstack.datastructs import DataContainer
+from avstack.modules.tracking.multisensor import MeasurementBasedMultiTracker
+from avstack.modules.tracking.tracker3d import BasicBoxTracker3D
 from avstack_bridge import Bridge
-from avstack_bridge.geometry import GeometryBridge
 from avstack_bridge.detections import DetectionBridge
 from avstack_bridge.tracks import TrackBridge
 from avstack_bridge.transform import do_transform_detection3d
-
-from avstack.datastructs import DataContainer
-from avstack.modules.tracking.tracker3d import BasicBoxTracker3D
-from avstack.modules.tracking.multisensor import MeasurementBasedMultiTracker
+from avstack_msgs.msg import BoxTrackArray
+from message_filters import ApproximateTimeSynchronizer, Subscriber
+from rclpy.node import Node
+from std_msgs.msg import Header, String
+from tf2_ros import TransformException
+from tf2_ros.buffer import Buffer
+from tf2_ros.transform_listener import TransformListener
+from vision_msgs.msg import Detection3DArray
 
 
 class MultiPlatformBoxTracker(Node):
@@ -36,7 +31,7 @@ class MultiPlatformBoxTracker(Node):
             history=rclpy.qos.QoSHistoryPolicy.KEEP_LAST,
             depth=10,
             reliability=rclpy.qos.QoSReliabilityPolicy.RELIABLE,
-            durability=rclpy.qos.QoSDurabilityPolicy.VOLATILE
+            durability=rclpy.qos.QoSDurabilityPolicy.VOLATILE,
         )
 
         # listen to transform information
@@ -82,8 +77,9 @@ class MultiPlatformBoxTracker(Node):
 
     def dets_receive(self, *args):
         """Receive approximately synchronized detections
-        
-        Since we set a dynamic number of agents, we have to use star input"""
+
+        Since we set a dynamic number of agents, we have to use star input
+        """
         if self.verbose:
             self.get_logger().info(f"Received {len(args)} detection messages!")
 
@@ -92,7 +88,7 @@ class MultiPlatformBoxTracker(Node):
         fovs = {}
         for dets_msg in args:
             agent = dets_msg.header.frame_id.split("/")[0]
-            
+
             # HACK: no fov model for now
             fovs[agent] = None
 
@@ -117,10 +113,11 @@ class MultiPlatformBoxTracker(Node):
                 )
             except TransformException:
                 self.get_logger().info(
-                    f'Could not transform detections for multi-platform tracking')
+                    f"Could not transform detections for multi-platform tracking"
+                )
                 return
             finally:
-                last_stamp = dets_msg.header.stamp 
+                last_stamp = dets_msg.header.stamp
 
         # perform tracking in global
         trks_avstack = self.model(dets_global, fovs=fovs, check_reference=False)
