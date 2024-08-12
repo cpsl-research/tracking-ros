@@ -70,6 +70,11 @@ class BoxTracker(Node):
                     dets_msg.header.frame_id,
                     dets_msg.header.stamp,
                 )
+                # tf_dets_world = self.tf_buffer.lookup_transform(
+                #     dets_msg.header.frame_id,
+                #     "world",
+                #     dets_msg.header.stamp,
+                # )
                 dets_msg_tf = Detection3DArray()
                 dets_msg_tf.detections = [
                     do_transform_detection3d(det, tf_world_dets)
@@ -91,7 +96,20 @@ class BoxTracker(Node):
         trks_ros = TrackBridge.avstack_to_tracks(
             trks_avstack, header=dets_msg_tf.header
         )
-        self.publisher_trks.publish(trks_ros)
+
+        # transform back to agent frame if needed
+        # if self.tracking_in_global:
+        #     trks_ros_local = BoxTrackArray()
+        #     trks_ros_local.tracks = [
+        #         do_transform_boxtrack(trk, tf_dets_world)
+        #         for trk in trks_ros.tracks
+        #     ]
+        #     trks_ros_local.header = tf_dets_world.header
+        # else:
+        #     trks_ros_local = trks_ros
+
+        trks_ros_local = trks_ros
+        self.publisher_trks.publish(trks_ros_local)
 
 
 def main(args=None):
