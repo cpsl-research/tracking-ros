@@ -31,7 +31,7 @@ class BoxTracker(Node):
 
         # listen to transform information
         self.tf_buffer = Buffer()
-        self.tf_listener = TransformListener(self.tf_buffer, self, qos=qos)
+        self.tf_listener = TransformListener(self.tf_buffer, self)
 
         # subscribe to initialization message (optional)
         self.subscriber_init = self.create_subscription(
@@ -65,16 +65,12 @@ class BoxTracker(Node):
         # perform reference conversion if needed
         if self.tracking_in_global:
             try:
+                # transform that takes **points** from source=agent to target=world
                 tf_world_dets = self.tf_buffer.lookup_transform(
-                    "world",
-                    dets_msg.header.frame_id,
-                    dets_msg.header.stamp,
+                    target_frame="world",
+                    source_frame=dets_msg.header.frame_id,
+                    time=dets_msg.header.stamp,
                 )
-                # tf_dets_world = self.tf_buffer.lookup_transform(
-                #     dets_msg.header.frame_id,
-                #     "world",
-                #     dets_msg.header.stamp,
-                # )
                 dets_msg_tf = Detection3DArray()
                 dets_msg_tf.detections = [
                     do_transform_detection3d(det, tf_world_dets)
@@ -96,18 +92,6 @@ class BoxTracker(Node):
         trks_ros = TrackBridge.avstack_to_tracks(
             trks_avstack, header=dets_msg_tf.header
         )
-
-        # transform back to agent frame if needed
-        # if self.tracking_in_global:
-        #     trks_ros_local = BoxTrackArray()
-        #     trks_ros_local.tracks = [
-        #         do_transform_boxtrack(trk, tf_dets_world)
-        #         for trk in trks_ros.tracks
-        #     ]
-        #     trks_ros_local.header = tf_dets_world.header
-        # else:
-        #     trks_ros_local = trks_ros
-
         trks_ros_local = trks_ros
         self.publisher_trks.publish(trks_ros_local)
 

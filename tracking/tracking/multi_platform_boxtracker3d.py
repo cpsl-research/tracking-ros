@@ -36,7 +36,7 @@ class MultiPlatformBoxTracker(Node):
 
         # listen to transform information
         self.tf_buffer = Buffer()
-        self.tf_listener = TransformListener(self.tf_buffer, self, qos=qos)
+        self.tf_listener = TransformListener(self.tf_buffer, self)
 
         # subscribe to initialization message (optional)
         self.subscriber_init = self.create_subscription(
@@ -86,6 +86,7 @@ class MultiPlatformBoxTracker(Node):
         # convert all tracks to global reference frame
         dets_global = {}
         fovs = {}
+        transforms = {}
         for dets_msg in args:
             agent = dets_msg.header.frame_id.split("/")[0]
 
@@ -100,6 +101,7 @@ class MultiPlatformBoxTracker(Node):
                     dets_msg.header.frame_id,
                     dets_msg.header.stamp,
                 )
+                transforms[agent] = tf_world_dets
                 dets_global[agent] = DataContainer(
                     frame=0,
                     timestamp=Bridge.rostime_to_time(dets_msg.header.stamp),
