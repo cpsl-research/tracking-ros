@@ -15,6 +15,7 @@ setup(
         ("share/" + package_name, ["package.xml"]),
         (os.path.join("share", package_name, "config"), glob("config/*.yaml")),
         (os.path.join("share", package_name, "launch"), glob("launch/*.py")),
+        (os.path.join("share", package_name, "samples"), glob("samples/*.py")),
     ],
     install_requires=["setuptools"],
     zip_safe=True,
@@ -27,6 +28,8 @@ setup(
         "console_scripts": [
             "boxtracker3d = tracking.boxtracker3d:main",
             "multi_platform_boxtracker3d = tracking.multi_platform_boxtracker3d:main",
+            "metrics_evaluator = tracking.metrics:main",
+            "track_and_truth_sample = samples.TrackAndTruthSample:main",
         ],
     },
 )
