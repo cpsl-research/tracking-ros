@@ -1,5 +1,7 @@
+import numpy as np
 import rclpy
 from avapi.evaluation.ospa import OspaMetric
+from avstack.modules.assignment import gnn_single_frame_assign
 from avstack_bridge.objects import ObjectStateBridge
 from avstack_bridge.tracks import TrackBridge
 from avstack_msgs.msg import BoxTrackArray, ObjectStateArray, TrackingMetrics
@@ -37,23 +39,40 @@ class MetricsEvalator(Node):
 
         # publish metrics list
         self.publisher_metrics = self.create_publisher(
-            msg_type=TrackingMetrics, topic="metrics", qos_profile=qos
+            msg_type=TrackingMetrics, topic="tracking_metrics", qos_profile=qos
         )
 
-    def receive(self, msg_tracks: BoxTrackArray, msg_truths: ObjectStateArray):
+    def receive(
+        self,
+        msg_tracks: BoxTrackArray,
+        msg_truths: ObjectStateArray,
+        assign_radius: float = 2.0,
+    ):
         header = msg_truths.header
 
         # convert to avstack types
-        tracks = TrackBridge.tracks_to_avstack(msg_tracks)
-        truths = ObjectStateBridge.objectstatearray_to_avstack(msg_truths)
+        _tracks = TrackBridge.tracks_to_avstack(msg_tracks)
+        _truths = ObjectStateBridge.objectstatearray_to_avstack(msg_truths)
+        trks_position = [track.position.x for track in _tracks]
+        trus_position = [
+            truth.position.x for truth in _truths if "static" not in truth.obj_type
+        ]
 
         # compute metrics
-        trks_ospa = [track.position.x for track in tracks]
-        trus_ospa = [truth.position.x for truth in truths]
-        ospa = OspaMetric.cost(trks_ospa, trus_ospa)
+        A = np.array(
+            [[np.linalg.norm(l1 - l2) for l1 in trks_position] for l2 in trus_position]
+        )
+        assign = gnn_single_frame_assign(A, cost_threshold=assign_radius)
+        ospa = OspaMetric.cost(trks_position, trus_position)
 
         # publish output
-        metrics_msg = TrackingMetrics(header=header, ospa=ospa)
+        metrics_msg = TrackingMetrics(
+            header=header,
+            n_truths=len(trus_position),
+            n_tracks=len(trks_position),
+            n_assign=len(assign),
+            ospa=ospa,
+        )
         self.publisher_metrics.publish(metrics_msg)
 
 

@@ -28,7 +28,8 @@ setup(
         "console_scripts": [
             "boxtracker3d = tracking.boxtracker3d:main",
             "multi_platform_boxtracker3d = tracking.multi_platform_boxtracker3d:main",
-            "metrics_evaluator = tracking.metrics:main",
+            "metrics_evaluator = tracking.metrics_evaluator:main",
+            "metrics_visualizer = tracking.metrics_visualizer:main",
             "track_and_truth_sample = samples.TrackAndTruthSample:main",
         ],
     },
